@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp Outreach - Jan IE 2026</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; }
+  header { background: #25D366; color: white; padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 18px; }
+  .stats { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+  .stat { background: rgba(0,0,0,0.2); border-radius: 12px; padding: 4px 12px; font-size: 13px; }
+  .stat span { font-weight: bold; }
+
+  .controls { background: white; padding: 14px 20px; border-bottom: 1px solid #ddd; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .msg-box { flex: 1; min-width: 260px; }
+  .msg-box label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+  textarea { width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 8px; font-size: 13px; resize: vertical; min-height: 60px; }
+
+  .image-box { display: flex; flex-direction: column; gap: 4px; }
+  .image-box label { font-size: 12px; color: #666; }
+  #imgPreview { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc; display: none; cursor: pointer; }
+  .img-placeholder { width: 60px; height: 60px; border: 2px dashed #ccc; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 22px; color: #aaa; }
+  #imgInput { display: none; }
+
+  .filter-bar { background: white; padding: 10px 20px; border-bottom: 1px solid #ddd; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .filter-bar label { font-size: 13px; color: #666; }
+  .filter-btn { border: 1px solid #ccc; background: white; border-radius: 16px; padding: 4px 14px; cursor: pointer; font-size: 13px; }
+  .filter-btn.active { background: #25D366; color: white; border-color: #25D366; }
+  .search-input { border: 1px solid #ccc; border-radius: 16px; padding: 5px 14px; font-size: 13px; outline: none; margin-left: auto; width: 180px; }
+
+  .list { padding: 12px 20px; display: flex; flex-direction: column; gap: 8px; max-width: 960px; margin: 0 auto; }
+  .card { background: white; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card.done { border-left: 4px solid #25D366; opacity: 0.7; }
+  .card.skip { border-left: 4px solid #f0ad4e; opacity: 0.7; }
+  .card.pending { border-left: 4px solid #ccc; }
+  .idx { color: #aaa; font-size: 12px; min-width: 28px; }
+  .info { flex: 1; min-width: 0; }
+  .name { font-weight: bold; font-size: 14px; }
+  .phone { font-size: 12px; color: #555; }
+  .note { font-size: 11px; color: #e07b00; margin-top: 2px; }
+  .actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .btn { border: none; border-radius: 6px; padding: 7px 14px; cursor: pointer; font-size: 13px; font-weight: bold; text-decoration: none; display: inline-block; white-space: nowrap; }
+  .btn-wa { background: #25D366; color: white; }
+  .btn-wa:hover { background: #1ebe5d; }
+  .btn-call { background: #0084ff; color: white; }
+  .btn-call:hover { background: #0070d8; }
+  .btn-done { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+  .btn-done.active, .card.done .btn-done { background: #25D366; color: white; border-color: #25D366; }
+  .btn-skip { background: #fff8e1; color: #f57c00; border: 1px solid #ffe082; }
+  .btn-skip.active, .card.skip .btn-skip { background: #f0ad4e; color: white; border-color: #f0ad4e; }
+  .status-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+  .badge-done { background: #e8f5e9; color: #2e7d32; }
+  .badge-skip { background: #fff3cd; color: #856404; }
+  .empty { text-align: center; color: #aaa; padding: 40px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div style="font-size:20px;">&#128172;</div>
+  </div>
+  <h1>WhatsApp Outreach</h1>
+  <div class="stats">
+    <div class="stat">Total: <span id="sTotal">0</span></div>
+    <div class="stat" style="background:rgba(255,255,255,0.3);">Pending: <span id="sPending">0</span></div>
+    <div class="stat" style="background:rgba(0,0,0,0.3);">Done: <span id="sDone">0</span></div>
+    <div class="stat" style="background:rgba(0,0,0,0.25);">Skip: <span id="sSkip">0</span></div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="msg-box">
+    <label>Predefined Message (use {name} for contact name)</label>
+    <textarea id="msgTemplate" rows="10">Hi {name},
+
+✨ Inner Engineering Program (English) in Chinchwad from 9 to 12 April 2026
+
+🪷 Designed by Sadhguru, Inner Engineering is a transformative program featuring simple yogic practices, guided sessions, meditative processes and the powerful 21- minute Shambhavi Mahamudra kriya
+
+The program can establish a foundation of health, exuberance and a chemistry of blissfulness within, leading to a joyful, fulfilling life. 😃
+
+🍃What is Inner Engineering?
+Know more: https://youtu.be/L9-WwLCy8XY
+
+For more information and registration, click here:
+Isha.co/IE-Chinchwad
+
+📞For queries, contact:
+7588456182 / 9325859740
+
+In Love, Light and Laughter 🌸
+Isha Volunteers</textarea>
+  </div>
+  <div class="image-box">
+    <label>Attach Image</label>
+    <input type="file" id="imgInput" accept="image/*">
+    <div class="img-placeholder" id="imgPlaceholder" onclick="document.getElementById('imgInput').click()" title="Click to select image">+</div>
+    <img id="imgPreview" onclick="document.getElementById('imgInput').click()" title="Click to change image" />
+    <span id="imgName" style="font-size:11px;color:#888;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px;">
+    <button class="btn" style="background:#f44336;color:white;" onclick="resetAll()">Reset All</button>
+    <button class="btn" style="background:#607d8b;color:white;" onclick="exportCSV()">Export CSV</button>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <label>Filter:</label>
+  <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">All</button>
+  <button class="filter-btn" data-filter="pending" onclick="setFilter('pending',this)">Pending</button>
+  <button class="filter-btn" data-filter="done" onclick="setFilter('done',this)">Done</button>
+  <button class="filter-btn" data-filter="skip" onclick="setFilter('skip',this)">Skip</button>
+  <input class="search-input" id="searchInput" type="text" placeholder="Search name..." oninput="renderList()">
+</div>
+
+<div class="list" id="contactList"></div>
+
+<script>
+const RAW_DATA = `Pradeep K G,91 9986595933,pradeepkgelectrical@gmail.com,
+Aarti Nathani,91 9322227815,nathaniaarti.58@gmail.com,
+Milind Dhokre,91 9766374876,milinddhokre@gmail.com,
+Utkarsha Pandit,91 9730626134,utkarshapandit@gmail.com,
+Aadi Havele,91 7030700093,havele.aadi@gmail.com,
+Renuka Gaikwad,91 9769502227,renukasgaikwad83@gmail.com,No results found with this number
+Sneha Surana,91 9960835006,beena.uttam9@gmail.com,
+Beena Uttamchandani,91 9890762535,jasmin.scrat@gmail.com,
+Krisha Lakhani,91 8421055901,krishalakhani99@gmail.com,
+Veena Bhagwat,91 9552596310,veenabhagwat@yahoo.co.in,
+Shreya Karthik,91 8700269731,shreyadeepkar@gmail.com,
+Asha Rahate,91 8087946375,asharahate14@gmail.com,
+SATYANAND KOMMURI,91 8500570422,satyanandkommuri120@gmail.com,
+Saloni Patil,91 9970169238,sal.sallishah@gmail.com,No results found with this number
+Shivangi Nagar,91 8888890352,shivangi.nagar@yahoo.in,
+Sameer Nagar,91 9819122713,sammysworld@gmail.com,
+Abhinav Pal,91 8830503627,abhinavpal0604@gmail.com,
+Soham Sawalkar,91 9284625368,sohamsawalkar75@gmail.com,
+Shivam Mahajan,91 9158444687,shivammahajan98@gmail.com,
+Nilkanth Ahirrao,91 9823811485,nilkanth.ahirrao@gmail.com,
+Gaurav Chauhan,91 9958565608,msgauravchauhan@gmail.com,
+Annapurna Kumari,91 6201646819,annapurna.kumari1964@gmail.com,
+Priya Sathyanarayanan,91 9527386836,s.priya9186@gmail.com,
+Parag Raulwar,91 9890508970,parag.raulwar@gmail.com,
+Tushar Gavhane,91 8308374547,gavhanetushar8@gmail.com,
+Krupa Parekh,91 9727759191,zinzuvadiak@gmail.com,
+Dhruv Parekh,91 7972460505,dhruv.parekh15@gmail.com,
+Khishi Agrawal,91 8329601109,agrawalkhushi1627@gmail.com,
+Karuna Lund,91 9870760691,karuna.d.l9870@gmail.com,
+Rupali Muttha,91 8983030129,rupali.chordiya@gmail.com,
+Vikram Jadhav,91 8390102817,jadhav.vj8@gmail.com,
+Ravindranath K P,91 7721913300,kprnath70@gmail.com,
+Anshumali Awasthi,91 8668980767,awasthianshumali@gmail.com,
+Rutuja Kavande,91 7083334532,rutujakavande@gmail.com,
+Bharati Roy,91 9545978150,bharatiroy.sw@gmail.com,
+Soven Roy,91 9545978150,soven.roy@gmail.com,
+Hanmantrao Jadhav,91 9326003220,hanmantrao.m.jadhav@gmail.com,
+Mayuri Deshmukh,91 9175335396,jagtapmayuri01@gmail.com,
+Kirankumar Jagtap,91 9175591931,kkumar.jnec.mech@gmail.com,
+Chaitali hedaoo,91 7743839611,hedaoo.ch036@gmail.com,
+Navneet Kadu,91 9096040281,navneetkadu@gmail.com,
+Subhalaxmi Nayak,91 9766546815,subhalaxminayak11@gmail.com,
+Shruti Gambhir,91 9581933373,shrutigambhir123@gmail.com,
+Priya Pious,91 9960698596,priyapious@gmail.com,
+Vishakha Pande,91 9650581144,misakipande@gmail.com,
+Swarali Thorat,91 7709118597,swaralithorat99@gmail.com,
+Bindu Ramesh,91 9890821494,ramesh.chandra1417@gmail.com,
+Brijesh Yerram,91 9370553552,brijeshyerram@gmail.com,
+Ruhi Gupta,91 7840022552,ruhigupta.pec@gmail.com,
+Geetanjali Pawar,91 9637660145,gitbhingare@gmail.com,
+PRAMOD KOLEKAR,91 9867416889,pramodskolekar7296@gmail.com,
+Priyanka Patil,91 9561502772,priyupatil9561@gmail.com,
+Sharvari Manakawad,91 8007694698,sharvari.manakawad@gmail.com,
+Amruta Dhamdhere,91 8237057057,amrutadhamdhere15@gmail.com,
+Nishi Mishra,91 9975313734,nishimishra49@gmail.com,
+Rajesh Singh,91 9370130051,singh104202@gmail.com,
+Sweta Samudre,91 9881254889,swetasamudre@gmail.com,
+Ashwani Samudre,91 9881254883,asamudre@gmail.com,
+Siddharth Jagtap,91 8010351669,siddharth4995@gmail.com,
+Ruchi Dube,91 9589603640,ruchidube2003@gmail.com,
+Pooja Wagdre,91 9307989389,poojawagdre@gmail.com,
+Swapna Kalamkar,91 9545500158,swapna.joshi@yahoo.co.in,
+Manasi Sharma,91 8975287965,2016manasi@gmail.com,
+Binesh Pillai,91 9920720268,bineshrpillai@gmail.com,
+Neetu Pillai,91 9925568364,neetumanohar@outlook.com,
+Nilesh Wakade,91 9765733051,nileshwakade6@gmail.com,
+Priyesh K Sinha,91 8788594522,priyeshksinha@gmail.com,
+Deepak Patil,91 9850293629,deepak06patil@gmail.com,
+Siddharth Mehta,91 8767490049,siddarthmehta@rediffmail.com,
+Nitin Aggarwal,91 9594218380,nitinaggarwal7592@gmail.com,
+Shweta Joshi,91 9820218386,shwetamodak1981@gmail.com,
+Meenakshi Gupta,91 9665580089,mnk.gpta@gmail.com,
+Preeti Agarwal,91 9657466399,preetiagarwal.lnmiit@gmail.com,
+Shubhangi Chitnis,91 9920225388,shubhangichitnis@yahoo.com,
+Ganesh Atram,91 9420503590,ganeshatram7@gmail.com,
+Sonali Dhurjad,91 8928175866,dhurjadsonali@gmail.com,
+Prachi Shrivastava,91 9769988832,prachi.shrivastava3@gmail.com,
+Chandan Kumar,91 9560665399,chandanatm@gmail.com,
+Satish More,91 9769498070,satishmore.123@gmail.com,
+Anjum Khan,91 9987067577,anjumkhan0786@gmail.com,
+Sarika Malviya,91 9630155003,sarikachaturvedi1906@gmail.com,
+Rahul Khopkar,91 9819553706,rahulkhopkar2002@gmail.com,
+Prasad Wandhekar,91 9823481501,prasadwandhekar@gmail.com,
+Amitkumar Dubey,91 9561006620,amitkumar.dubey1103@gmail.com,
+Archana Gupta,91 9403178027,raju.archana05@gmail.com,
+Kishore Padmawar,91 9619497994,kishorepadmawar@yahoo.co.in,
+Minal Pawde,91 9850100892,minalpawde@gmail.com,
+Gayatri Katiyar,91 9702244456,gayatrikatiyar97@gmail.com,
+Nilufar Gafurova,91 8767296547,nilufar.gafurova@gmail.com,
+Laxmi Sule,91 9284533688,laxmisule09@gmail.com,
+Prajakta Kulkarni,91 8605232823,prajaktakulkarni113@gmail.com,
+Harpreet Ahuja,91 9168437810,harpreetahuja1988@gmail.com,
+Siddhi Birajdar,91 7709266887,siddhirajbirajdar@gmail.com,
+Vishal Ladkat,91 9890390831,ladkatvishal@gmail.com,
+Sachin Pardeshi,91 9970688694,sachin.pardeshi@hotmail.com,
+Neelam Parekh,91 9821461217,neelamparekh99@gmail.com,
+Aarohi Bhangde,91 9370025882,bhangdeaarohi2019@gmail.com,
+Nilesh Mahajan,91 9420698882,mahajannilesh2407@gmail.com,
+Saudamini Sawant,91 9967254040,saudaminisawant1712@gmail.com,
+Dhanshree Dhavale,91 9920698823,dhanshreedhaval22@gmail.com`;
+
+// Parse contacts
+const contacts = RAW_DATA.trim().split('\n').map((line, i) => {
+  const parts = line.split(',');
+  return {
+    id: i,
+    name: parts[0]?.trim() || '',
+    phone: parts[1]?.trim() || '',
+    email: parts[2]?.trim() || '',
+    note: parts[3]?.trim() || ''
+  };
+}).filter(c => c.name);
+
+let currentFilter = 'all';
+let statuses = {};
+
+function loadStatuses() {
+  try { statuses = JSON.parse(localStorage.getItem('wa_statuses') || '{}'); } catch(e) { statuses = {}; }
+}
+
+function saveStatuses() {
+  localStorage.setItem('wa_statuses', JSON.stringify(statuses));
+}
+
+function setStatus(id, status) {
+  if (statuses[id] === status) {
+    delete statuses[id];
+  } else {
+    statuses[id] = status;
+  }
+  saveStatuses();
+  renderList();
+  updateStats();
+}
+
+function formatPhone(phone) {
+  return phone.replace(/\s+/g, '');
+}
+
+function getMsg(name) {
+  const tmpl = document.getElementById('msgTemplate').value;
+  return tmpl.replace(/\{name\}/gi, name);
+}
+
+function waLink(contact) {
+  const phone = formatPhone(contact.phone);
+  const msg = encodeURIComponent(getMsg(contact.name));
+  return `https://wa.me/${phone}?text=${msg}`;
+}
+
+function callLink(contact) {
+  const phone = formatPhone(contact.phone);
+  return `tel:+${phone}`;
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function updateStats() {
+  const total = contacts.length;
+  const done = contacts.filter(c => statuses[c.id] === 'done').length;
+  const skip = contacts.filter(c => statuses[c.id] === 'skip').length;
+  const pending = total - done - skip;
+  document.getElementById('sTotal').textContent = total;
+  document.getElementById('sDone').textContent = done;
+  document.getElementById('sSkip').textContent = skip;
+  document.getElementById('sPending').textContent = pending;
+}
+
+function renderList() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const container = document.getElementById('contactList');
+
+  let filtered = contacts.filter(c => {
+    const st = statuses[c.id] || 'pending';
+    if (currentFilter !== 'all' && st !== currentFilter) return false;
+    if (search && !c.name.toLowerCase().includes(search) && !c.phone.includes(search)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty">No contacts found.</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map((c, idx) => {
+    const st = statuses[c.id] || 'pending';
+    return `
+    <div class="card ${st}" id="card-${c.id}">
+      <div class="idx">${c.id + 1}</div>
+      <div class="info">
+        <div class="name">${c.name}</div>
+        <div class="phone">${c.phone} &nbsp;|&nbsp; ${c.email}</div>
+        ${c.note ? `<div class="note">${c.note}</div>` : ''}
+      </div>
+      <div class="actions">
+        <a class="btn btn-wa" href="${waLink(c)}" target="_blank" title="Send WhatsApp message">&#128172; WhatsApp</a>
+        <a class="btn btn-call" href="${callLink(c)}" title="Call">&#128222; Call</a>
+        <button class="btn btn-done ${st==='done'?'active':''}" onclick="setStatus(${c.id},'done')">&#10003; Done</button>
+        <button class="btn btn-skip ${st==='skip'?'active':''}" onclick="setStatus(${c.id},'skip')">&#10007; Skip</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function resetAll() {
+  if (confirm('Reset ALL statuses to pending?')) {
+    statuses = {};
+    saveStatuses();
+    renderList();
+    updateStats();
+  }
+}
+
+function exportCSV() {
+  const rows = [['Name','Phone','Email','Status']];
+  contacts.forEach(c => {
+    rows.push([c.name, c.phone, c.email, statuses[c.id] || 'pending']);
+  });
+  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'outreach_status.csv';
+  a.click();
+}
+
+// Image handling
+document.getElementById('imgInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = document.getElementById('imgPreview');
+    img.src = ev.target.result;
+    img.style.display = 'block';
+    document.getElementById('imgPlaceholder').style.display = 'none';
+    document.getElementById('imgName').textContent = file.name;
+    // Store in localStorage
+    try { localStorage.setItem('wa_img', ev.target.result); } catch(e) {}
+  };
+  reader.readAsDataURL(file);
+});
+
+// Restore saved image or load default asset
+function restoreImage() {
+  try {
+    const saved = localStorage.getItem('wa_img');
+    if (saved) {
+      document.getElementById('imgPreview').src = saved;
+      document.getElementById('imgPreview').style.display = 'block';
+      document.getElementById('imgPlaceholder').style.display = 'none';
+      document.getElementById('imgName').textContent = 'saved image';
+    } else {
+      // Auto-load default shared image from assets
+      const defaultImg = './assets/shared image.jpg';
+      const img = document.getElementById('imgPreview');
+      img.onload = function() {
+        img.style.display = 'block';
+        document.getElementById('imgPlaceholder').style.display = 'none';
+        document.getElementById('imgName').textContent = 'shared image.jpg';
+      };
+      img.src = defaultImg;
+    }
+  } catch(e) {}
+}
+
+// Save message template on change
+document.getElementById('msgTemplate').addEventListener('input', function() {
+  localStorage.setItem('wa_msg', this.value);
+});
+
+// Restore message template
+function restoreMsg() {
+  const saved = localStorage.getItem('wa_msg');
+  if (saved) document.getElementById('msgTemplate').value = saved;
+}
+
+// Init
+loadStatuses();
+restoreMsg();
+restoreImage();
+updateStats();
+renderList();
+</script>
+
+<div style="text-align:center;padding:16px;color:#aaa;font-size:12px;">
+  Note: WhatsApp button opens wa.me with the pre-filled message. The image (shared image.jpg) loads automatically from assets/. Attach it manually in WhatsApp after the chat opens — WhatsApp does not allow auto-attaching via link.
+</div>
+</body>
+</html>
